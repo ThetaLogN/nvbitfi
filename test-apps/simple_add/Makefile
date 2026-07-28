@@ -2,7 +2,7 @@ TARGET = simple_add
 
 # CUDA
 NVCC = `which nvcc`
-ARCH=35
+ARCH=75
 
 all: clean $(TARGET) 
 
@@ -12,7 +12,7 @@ $(TARGET):
 test:
 	./simple_add 
 
-golden:
+golden: $(TARGET)
 	./simple_add >golden_stdout.txt 2>golden_stderr.txt
 
 clean:

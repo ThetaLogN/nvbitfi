@@ -1,0 +1,1 @@
+ERROR file nvbit_imp.cpp line 716: CUDA_ERROR_INVALID_SOURCE device kernel image is invalid

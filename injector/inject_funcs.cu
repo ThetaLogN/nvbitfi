@@ -23,6 +23,24 @@
 #include "injector.h"
 #include "arch.h"
 
+// As of NVBit 1.8 (with CUDA 13.0), calling printf() or assert() from an
+// injected device function makes the patched module fail to load with
+// CUDA_ERROR_INVALID_SOURCE. This is not specific to NVBitFI: NVBit's own
+// mem_printf tool fails the same way. Both pull in an external device-side
+// symbol (vprintf / __assertfail) that cannot be resolved once the function
+// is patched into the application's module.
+// The inj_info->debug[] array below carries the same information back to the
+// host, so nothing is lost. Flip this to 1 if a future NVBit release restores
+// device printf support.
+#define INJ_DEVICE_PRINTF 0
+#if INJ_DEVICE_PRINTF
+#define INJ_PRINTF(...) printf(__VA_ARGS__)
+#define INJ_ASSERT(x) assert(x)
+#else
+#define INJ_PRINTF(...) do {} while (0)
+#define INJ_ASSERT(x) do {} while (0)
+#endif
+
 // flatten thread id
 __inline__ __device__ int get_flat_tid() {
 	int tid_b = threadIdx.x + (blockDim.x * (threadIdx.y + (threadIdx.z * blockDim.y))); // thread id within a block
@@ -98,15 +116,15 @@ extern "C" __device__ __noinline__ void inject_error(uint64_t piinfo, uint64_t p
  	}
   
    	if (verbose_device && injectFlag) 
-		printf("inj_info->instID=%ld, %ld, %ld, %ld\n", inj_info->instID, currCounter1, currCounter2, currCounter3);
+		INJ_PRINTF("inj_info->instID=%ld, %ld, %ld, %ld\n", inj_info->instID, currCounter1, currCounter2, currCounter3);
 
 	if (injectFlag) {
-		// assert(0 == 10);
+		// INJ_ASSERT(0 == 10);
 		if (verbose_device)
-			printf("offset=0x%x, igid:%d, destGPRNum=%d, grp_index=%d\n", offset, igid, destGPRNum, grp_index); 
+			INJ_PRINTF("offset=0x%x, igid:%d, destGPRNum=%d, grp_index=%d\n", offset, igid, destGPRNum, grp_index); 
 		// We need to randomly select one register from numDestGPRs + (destPRNum1 != -1) + (destPRNum2 != -1)
 		int totalDest = numDestGPRs + (destPRNum1 != -1) + (destPRNum2 != -1);
-		assert(totalDest > 0);
+		INJ_ASSERT(totalDest > 0);
 		int injDestID = totalDest*inj_info->opIDSeed;
 		if (injDestID < numDestGPRs) {
 			if (destGPRNum != -1) {
@@ -139,18 +157,18 @@ extern "C" __device__ __noinline__ void inject_error(uint64_t piinfo, uint64_t p
  				inj_info->pcOffset = offset;  // record the pc where the injection is performed (offset from the beginning of the function)
  				inj_info->tid = get_flat_tid(); // record the thread ID where the injection is performed
  				inj_info->errorInjected = true; // perf optimization
- 				assert(inj_info->debug[12] == inj_info->opcode);
- 				assert(inj_info->debug[13] == inj_info->pcOffset);
+ 				INJ_ASSERT(inj_info->debug[12] == inj_info->opcode);
+ 				INJ_ASSERT(inj_info->debug[13] == inj_info->pcOffset);
  				if (verbose_device) 
- 					printf("done here\n"); 
+ 					INJ_PRINTF("done here\n"); 
 			} else {
-				assert(0 == 2); 
+				INJ_ASSERT(0 == 2); 
 			}
 		} else { 
  
- 			// printf(":::ERROR Error injection into predicate registers is not supported by NVBit (as of April 10, 2020);"); 
+ 			// INJ_PRINTF(":::ERROR Error injection into predicate registers is not supported by NVBit (as of April 10, 2020);"); 
  
- 			// // assert(0 == 4); 
+ 			// // INJ_ASSERT(0 == 4); 
  			// if (destPRNum1 != -1 && destPRNum2 != -1) { // we want to inject into destPRNum1/destPRNum2 if it's not -1
  			//   inj_info->regNo = injDestID == numDestGPRs ? destPRNum1 : destPRNum2;
  			// } else if (destPRNum1 != -1) {

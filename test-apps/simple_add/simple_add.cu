@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 	cudaGetDeviceProperties(&cudaDevicePropForChoosing, device);
 
 	printf("Device %d (%s) is being used\n", device, cudaDevicePropForChoosing.name);
-	printf("memory: %.4f GB %s %d SMs x%d\n", cudaDevicePropForChoosing.totalGlobalMem/(1024.f*1024.f*1024.f), (cudaDevicePropForChoosing.ECCEnabled)?"ECC on":"ECC off", cudaDevicePropForChoosing.multiProcessorCount, cudaDevicePropForChoosing.clockRate );
+	printf("memory: %.4f GB %s %d SMs\n", cudaDevicePropForChoosing.totalGlobalMem/(1024.f*1024.f*1024.f), (cudaDevicePropForChoosing.ECCEnabled)?"ECC on":"ECC off", cudaDevicePropForChoosing.multiProcessorCount);
 
 	int nreps = DEFAULT_NREPS;
 	int ctas = DEFAULT_CTAS;

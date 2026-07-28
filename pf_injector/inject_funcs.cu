@@ -23,6 +23,18 @@
 #include "pf_injector.h"
 #include "arch.h"
 
+// See injector/inject_funcs.cu: as of NVBit 1.8 (with CUDA 13.0), printf() or
+// assert() inside an injected device function makes the patched module fail to
+// load with CUDA_ERROR_INVALID_SOURCE.
+#define INJ_DEVICE_PRINTF 0
+#if INJ_DEVICE_PRINTF
+#define INJ_PRINTF(...) printf(__VA_ARGS__)
+#define INJ_ASSERT(x) assert(x)
+#else
+#define INJ_PRINTF(...) do {} while (0)
+#define INJ_ASSERT(x) do {} while (0)
+#endif
+
 
 extern "C" __device__ __noinline__ void inject_error(uint64_t piinfo, uint64_t pverbose_device, int destGPRNum, int regval, int numDestGPRs, int maxRegs) {
 
@@ -39,7 +51,7 @@ extern "C" __device__ __noinline__ void inject_error(uint64_t piinfo, uint64_t p
 				if (laneid != inj_info->injLaneID) 
 								return; // This is not the selected Lane ID. No need to proceed.
 
-				assert(numDestGPRs > 0);
+				INJ_ASSERT(numDestGPRs > 0);
 				uint32_t injAfterVal = 0; 
 				uint32_t injBeforeVal = nvbit_read_reg(destGPRNum); // read the register value
 				if (DUMMY) {
@@ -49,7 +61,7 @@ extern "C" __device__ __noinline__ void inject_error(uint64_t piinfo, uint64_t p
 								nvbit_write_reg(destGPRNum, injAfterVal);
 				}
 				// updating counter/flag to check whether the error was injected
-				if (verbose_device) printf("register=%d, before=0x%x, after=0x%x, expected_after=0x%x\n", destGPRNum, injBeforeVal, nvbit_read_reg(destGPRNum), injAfterVal);
+				if (verbose_device) INJ_PRINTF("register=%d, before=0x%x, after=0x%x, expected_after=0x%x\n", destGPRNum, injBeforeVal, nvbit_read_reg(destGPRNum), injAfterVal);
 				inj_info->errorInjected = true; 
 				atomicAdd((unsigned long long*) &inj_info->injNumActivations, 1LL);  
 }

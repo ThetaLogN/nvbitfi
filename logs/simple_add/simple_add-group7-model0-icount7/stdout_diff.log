@@ -1,7 +1,4 @@
-1c1,4
-< ERROR file nvbit_imp.cpp line 716: CUDA_ERROR_INVALID_SOURCE device kernel image is invalid
+4c4
+< global sum = 102656 
 ---
-> Device 0 (Tesla T4) is being used
-> memory: 14.5622 GB ECC on 40 SMs
-> #CTAs=10, nreps=10, threads/CTA=1024
 > global sum = 102400 
